@@ -7,7 +7,6 @@ namespace ChessWPF {
 
   [Table( "Move" )]
   public partial class Move {
-    
     [Key]
     [DatabaseGenerated( DatabaseGeneratedOption.None )]
     public int MOVE_ID { get; set; }

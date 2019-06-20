@@ -6,8 +6,8 @@
          xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         xmlns:local="clr-namespace:ChessWPF"
         mc:Ignorable="d"  d:DesignWidth="1110"
-      d:DesignHeight="600" MinHeight="600" MinWidth="1110" WindowStartupLocation="CenterScreen" SizeChanged="Window_SizeChanged" >
-  <Grid Background="#FFEEEEEE">
+      d:DesignHeight="600" MinHeight="600" MinWidth="1110" WindowStartupLocation="CenterScreen" SizeChanged="Window_SizeChanged" Loaded='main_window_loaded' >
+  <Grid Background="#FFEEEEEE" Name='main'>
 
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="220" />
@@ -15,7 +15,8 @@
     </Grid.ColumnDefinitions>
 
     <DockPanel Grid.Column="1" Name='content'>
-      
+     
+
     </DockPanel>
 
     <Grid x:Name="GridMenu" Grid.Column="0" Width="220" HorizontalAlignment="Left" Background="#FF222222">

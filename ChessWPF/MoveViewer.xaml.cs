@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Data.Entity;
 using ChessLib;
 
 namespace ChessWPF {
@@ -28,14 +29,12 @@ namespace ChessWPF {
 
   public partial class MoveViewer : UserControl {
 
-
     private Board _board;
     private Chess _chess;
     public MoveItemList MoveList { get; private set; }
     public event EventHandler<NewMoveSelectedEventArgs> NewMoveSelected;
     private MoveDB db;
     private ObservableCollection<Move> MovesList;
-
 
     public MoveViewer( ) {
       InitializeComponent( );
@@ -44,14 +43,11 @@ namespace ChessWPF {
       MoveList = listViewMoveList.ItemsSource as MoveItemList;
       listViewMoveList.SelectionChanged += new SelectionChangedEventHandler( listViewMoveList_SelectionChanged );
     }
-
-
-
+    
     public Board Board {
       get => this._board;
       set {
         if ( _board != value ) {
-
           if ( _board != null ) {
             _board.BoardReset -= BoardReset;
             _board.NewMove -= NewMove;
@@ -63,7 +59,6 @@ namespace ChessWPF {
             _board.NewMove += NewMove;
             _board.RedoPosChanged += RedoPosChanged;
           }
-
         }
       }
     }
@@ -124,7 +119,7 @@ namespace ChessWPF {
 
     }
 
-    private void Reset( ) {
+    public void Reset( ) {
       int CurPos;
       int Count;
       Chess chess;

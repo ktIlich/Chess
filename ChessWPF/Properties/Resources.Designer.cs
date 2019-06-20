@@ -63,6 +63,16 @@ namespace ChessWPF.Properties {
         /// <summary>
         ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _new {
+            get {
+                object obj = ResourceManager.GetObject("_new", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap BlackBishop {
             get {
                 object obj = ResourceManager.GetObject("BlackBishop", resourceCulture);
@@ -116,6 +126,16 @@ namespace ChessWPF.Properties {
         internal static System.Drawing.Bitmap BlackRook {
             get {
                 object obj = ResourceManager.GetObject("BlackRook", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Поиск локализованного ресурса типа System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap coding {
+            get {
+                object obj = ResourceManager.GetObject("coding", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

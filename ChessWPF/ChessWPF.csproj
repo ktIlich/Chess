@@ -49,6 +49,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>favicon-256x256.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="ChessLib">
       <HintPath>..\..\ChessLib\ChessLib\bin\Debug\netstandard2.0\ChessLib.dll</HintPath>
@@ -71,6 +74,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -89,13 +93,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Bot.cs" />
+    <Compile Include="GameTimer.cs" />
     <Compile Include="Move.cs" />
     <Compile Include="MoveDB.cs" />
     <Compile Include="MoveViewer.xaml.cs">
       <DependentUpon>MoveViewer.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UserControl1.xaml.cs">
-      <DependentUpon>UserControl1.xaml</DependentUpon>
+    <Compile Include="Promotion.xaml.cs">
+      <DependentUpon>Promotion.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Result.xaml.cs">
+      <DependentUpon>Result.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Setting.xaml.cs">
+      <DependentUpon>Setting.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="ToolBar.xaml.cs">
+      <DependentUpon>ToolBar.xaml</DependentUpon>
     </Compile>
     <Page Include="Board.xaml">
       <SubType>Designer</SubType>
@@ -120,7 +135,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UserControl1.xaml">
+    <Page Include="Promotion.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Result.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Setting.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ToolBar.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -190,6 +217,9 @@
     <Resource Include="Resources\WhiteKnight.png" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\coding.png" />
+    <None Include="Resources\new.png" />
+    <Resource Include="favicon-256x256.ico" />
     <Content Include="LMoveDB.mdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

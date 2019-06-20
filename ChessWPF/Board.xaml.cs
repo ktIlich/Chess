@@ -1,46 +1,47 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using ChessLib;
 
 namespace ChessWPF {
-  /// <summary>
-  /// Логика взаимодействия для Board.xaml
-  /// </summary>
+
+  public class ChessCommands {
+    static ChessCommands( ) {
+      UndoCommand = new RoutedUICommand( "_Undo" , "Undo" , typeof( ToolBar ) );
+      RedoCommand = new RoutedUICommand( "_Redo" , "Redo" , typeof( ToolBar ) );
+    }
+    public static RoutedCommand UndoCommand { get; set; }
+    public static RoutedCommand RedoCommand { get; set; }
+  }
+
   public partial class Board : UserControl {
-
-    public enum GameResult { };
-
-
 
     private Chess _chess;
     private Color LightColor;
     private Color DarkColor;
     private Border[ , ] board_map;
+    private GameTimer game_timer;
+    private ToolBar toolBar;
+    public bool WithBot = false;
+    public int Diff;
+    private MainWindow main;
+    Bot bot = new Bot( );
 
     public event EventHandler<EventArgs> BoardReset;
     public event EventHandler<NewMoveEventArgs> NewMove;
     public event EventHandler RedoPosChanged;
 
-    private bool wait = true; //patern state
+    private bool wait = true;
+
+    public RoutedUICommand UndoCommand;
+    public RoutedUICommand RedoCommand;
 
     int xFrom, yFrom;
-
-    char[ ] arr_fig_symb = { 'P', 'R', 'N', 'B', 'Q' , 'K',
-                            'p', 'r', 'n', 'b', 'q' , 'k', '.' };
 
 
     public Board( ) {
@@ -50,7 +51,28 @@ namespace ChessWPF {
       DarkColor = ( Color )ColorConverter.ConvertFromString( "#769656" );
       board_map = new Border[ 8 , 8 ];
       CreateChessBoard( );
+      game_timer = new GameTimer( );
+      game_timer.Enabled = false;
+      UndoCommand = new RoutedUICommand( "_Undo" , "Undo" , typeof( MainWindow ) );
+      RedoCommand = new RoutedUICommand( "_Redo" , "Redo" , typeof( MainWindow ) );
     }
+
+    public Board( Chess chess ) {
+      InitializeComponent( );
+
+      _chess = chess;
+
+      LightColor = ( Color )ColorConverter.ConvertFromString( "#eeeed2" );
+      DarkColor = ( Color )ColorConverter.ConvertFromString( "#769656" );
+      board_map = new Border[ 8 , 8 ];
+      CreateChessBoard( );
+      game_timer = new GameTimer( );
+      game_timer.Enabled = false;
+      game_timer.Reset( _chess.GetCurrentColor( ) );
+      UndoCommand = new RoutedUICommand( "_Undo" , "Undo" , typeof( MainWindow ) );
+      RedoCommand = new RoutedUICommand( "_Redo" , "Redo" , typeof( MainWindow ) );
+    }
+
 
     public Chess GetChess {
       get => _chess;
@@ -62,6 +84,23 @@ namespace ChessWPF {
       }
     }
 
+    public ToolBar GetToolBar {
+      get => toolBar;
+    }
+
+    public ToolBar SetToolBar {
+      set {
+        toolBar = value != null ? value : new ToolBar( );
+      }
+    }
+
+    public MainWindow GetMainWindow {
+      get => main;
+    }
+
+    public MainWindow SetmainWinndow {
+      set { main = value; }
+    }
 
     private void CreateChessBoard( ) {
       Border cell;
@@ -89,6 +128,29 @@ namespace ChessWPF {
         }
       }
       MarkCell( );
+      if ( _chess.IsCheckmate( ) || _chess.IsStalemate( ) ) {
+        Result res = new Result( _chess , this );
+        res.Show( );
+      }
+    }
+
+
+    public GameTimer GameTimer {
+      get => game_timer;
+    }
+
+    public void UndoMove( ) {
+      _chess = _chess.UndoMove( );
+      SetFigureChess( );
+      game_timer.PlayerColor = _chess.GetCurrentColor( );
+      game_timer.Enabled = true;
+    }
+
+    public void RedoMove( ) {
+      _chess = _chess.RedoMove( );
+      SetFigureChess( );
+      game_timer.PlayerColor = _chess.GetCurrentColor( );
+      game_timer.Enabled = _chess.IsCheck( ) || _chess.GetAllMoves( ).Count > 0;
     }
 
     private void SetFigure( int x , int y , char figure ) {
@@ -103,9 +165,8 @@ namespace ChessWPF {
         cell_figure.Margin = ( cell.BorderThickness.Top == 0 ) ? new Thickness( 1 ) : new Thickness( 3 );
       }
       cell.Child = cell_figure;
+
     }
-
-
 
     private Image GetFigure( Char figure ) {
       switch ( figure ) {
@@ -126,14 +187,17 @@ namespace ChessWPF {
     }
 
 
-    private void Button_Click( object sender , RoutedEventArgs e ) {
-
+    public void DoMove( string move ) {
+      if ( !_chess.IsCheckmate( ) && !_chess.IsStalemate( ) ) {
+        _chess = _chess.Move( move );
+        OnNewMove( new NewMoveEventArgs( move ) );
+      }
     }
+
 
     private void Cell_MouseDown( object sender , RoutedEventArgs e ) {
       Border cell_select = ( Border )sender;
       UserControl cell_figure = ( UserControl )cell_select.Child;
-
       string xy = cell_select.Name.Substring( 1 );
       int x = int.Parse( xy[ 0 ].ToString( ) );
       int y = int.Parse( xy[ 1 ].ToString( ) );
@@ -147,26 +211,35 @@ namespace ChessWPF {
 
         string figure = _chess.GetFigureAt( xFrom , yFrom ).ToString( );
         string move = figure + ToCoord( xFrom , yFrom ) + ToCoord( x , y );
-        _chess = _chess.Move( move );
-        
-        OnNewMove( new NewMoveEventArgs( move ) );
+
+        if ( _chess.GetCurrentColor( ) == "White" ) {
+          if ( y == 7 && figure == "P" ) {
+            Promotion pr = new Promotion( "White" );
+            pr.ShowDialog( );
+            move += pr.FigurePromotion;
+          }
+        }
+        else if ( _chess.GetCurrentColor( ) == "Black" ) {
+          if ( y == 0 && figure == "p" ) {
+            Promotion pr = new Promotion( "Black" );
+            pr.ShowDialog( );
+            move += pr.FigurePromotion;
+          }
+        }
+        DoMove( move );
       }
-
-      //cell_figure.BorderBrush = new SolidColorBrush( Color.FromRgb( 55 , 55 , 55 ) );
-      //cell_figure.BorderThickness = new Thickness( 3 );
-
-      //if ( int.TryParse( cell_select.Name[ 1 ].ToString( ) , out start_pos[ 0 ] ) &&
-      //    int.TryParse( cell_select.Name[ 2 ].ToString( ) , out start_pos[ 1 ] ) ) {
-
-      //  move_figure = _chess.GetFigureAt( start_pos[ 0 ] , start_pos[ 1 ] );
-      //  MessageBox.Show( start_pos[ 0 ].ToString( ) + start_pos[ 1 ].ToString( ) );
-
-      //  if ( move_figure != '.' ) {
-      //    cell_figure.BorderBrush = new SolidColorBrush( Color.FromRgb( 55 , 55 , 55 ) );
-      //    cell_figure.BorderThickness = new Thickness( 3 );
-      //  }
-      //}
       SetFigureChess( );
+      game_timer.PlayerColor = _chess.GetCurrentColor( );
+      game_timer.Enabled = _chess.IsCheck( ) || _chess.GetAllMoves( ).Count > 0;
+    }
+
+
+
+    private string MoveBot( ) {
+      if ( _chess.GetCurrentColor( ) == "Black" ) {
+        return bot.GetBestMove( _chess , Diff );
+      }
+      return "";
     }
 
     private void MarkCellFrom( ) { // Pe2e4 xy = e2
@@ -176,9 +249,10 @@ namespace ChessWPF {
         int y = xy[ 1 ] - '1';
 
         UserControl ctrl = ( UserControl )board_map[ x , y ].Child;
+
         ctrl.Margin = new Thickness( 2 );
-        ctrl.BorderBrush = new SolidColorBrush( Color.FromRgb( 87 , 209 , 0 ) );
-        ctrl.BorderThickness = new Thickness( 3 );
+        ctrl.BorderBrush = Brushes.Black;
+        ctrl.BorderThickness = new Thickness( 2 );
       }
     }
 
@@ -217,23 +291,12 @@ namespace ChessWPF {
 
           UserControl ctrl = ( UserControl )board_map[ x , y ].Child;
           ctrl.Margin = new Thickness( 2 );
-          ctrl.BorderBrush = new SolidColorBrush( Color.FromRgb( 87 , 209 , 0 ) );
-          ctrl.BorderThickness = new Thickness( 3 );
+          ctrl.BorderBrush = ( ( ( x + y ) % 2 ) == 0 ) ? Brushes.DarkGreen : Brushes.Beige;
+          ctrl.BorderThickness = new Thickness( 2 );
         }
       }
-
     }
 
-
-
-
-    private void Button_MouseMove( object sender , MouseEventArgs e ) {
-
-    }
-
-    private void Button_MouseUp( object sender , MouseButtonEventArgs e ) {
-
-    }
 
     public class NewMoveEventArgs : EventArgs {
       public string Move { get; private set; }
@@ -241,8 +304,9 @@ namespace ChessWPF {
       public NewMoveEventArgs( string Move ) {
         this.Move = Move;
       }
-
     }
+
+
 
     protected void OnRedooPosChanged( EventArgs e ) {
       if ( RedoPosChanged != null ) {
@@ -253,8 +317,14 @@ namespace ChessWPF {
     protected void OnNewMove( NewMoveEventArgs e ) {
       if ( NewMove != null ) {
         NewMove( this , e );
+
+        if ( WithBot && MoveBot( ) != "" ) {
+          DoMove( MoveBot( ) );
+        }
       }
     }
+
+
 
     protected void OnBoardReset( EventArgs e ) {
       if ( BoardReset != null ) {
